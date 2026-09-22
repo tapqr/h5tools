@@ -18,7 +18,8 @@
     "user:create": "npm run user -- create",
     "user:passwd": "npm run user -- passwd",
     "user:list": "npm run user -- list",
-    "user:seed": "npm run user -- seed"
+    "user:seed": "npm run user -- seed",
+    "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@h5tools/shared": "*",
