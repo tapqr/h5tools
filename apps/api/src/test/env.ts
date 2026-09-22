@@ -30,27 +30,38 @@ export function readTestDatabaseUrl(): string {
 }
 
 /**
- * 读出测试用的 Redis 地址并校验它**不是 0 号库**。
+ * 读出测试用的 Redis 地址与 key 前缀。
  *
- * 测试会 flushdb。0 号库是开发时 session 和缓存所在的地方，
- * 指错了就是把自己登出、把缓存清光 —— 和测试库那道守卫是同一个道理。
+ * 隔离**靠前缀而不是库号**：我们连的是一台共享 Redis，上面有别的项目在跑。
+ * 早先那版用 `flushdb` + "必须是非 0 号库"的守卫，在共享环境下是不成立的 ——
+ * 切换到共享实例时发现 db15 上已有别人的 103 个 key，而测试配置恰好指着它。
+ * 库号空不空是会变的，前缀是我们自己的。
  */
-export function readTestRedisUrl(): string {
-  const url = process.env.REDIS_URL_TEST;
+export function readTestRedis(): { url: string; keyPrefix: string } {
+  const url = process.env.REDIS_URL_TEST ?? process.env.REDIS_URL;
   if (!url) {
-    throw new Error('缺少 REDIS_URL_TEST —— 测试会 flushdb，必须用独立的 Redis 库');
+    throw new Error('缺少 REDIS_URL_TEST（或 REDIS_URL）');
   }
-  const db = new URL(url).pathname.replace('/', '');
-  if (!db || db === '0') {
-    throw new Error(`REDIS_URL_TEST 必须显式指定非 0 号库（如 .../15），当前：${url}`);
+
+  const keyPrefix = process.env.REDIS_KEY_PREFIX_TEST;
+  if (!keyPrefix) {
+    throw new Error('缺少 REDIS_KEY_PREFIX_TEST —— 测试会按前缀批量删 key，前缀必须显式给出');
   }
-  return url;
+  if (keyPrefix === process.env.REDIS_KEY_PREFIX) {
+    throw new Error(
+      `REDIS_KEY_PREFIX_TEST 与开发用的前缀相同（${keyPrefix}）。` +
+        '测试会清掉这个前缀下的全部 key，那会把你正在用的 session 和缓存一起清掉。',
+    );
+  }
+  return { url, keyPrefix };
 }
 
-/** 把当前进程切到测试库与测试用 Redis */
+/** 把当前进程切到测试库与测试用的 Redis 前缀 */
 export function useTestDatabase(): string {
   const testUrl = readTestDatabaseUrl();
+  const redis = readTestRedis();
   process.env.DATABASE_URL = testUrl;
-  process.env.REDIS_URL = readTestRedisUrl();
+  process.env.REDIS_URL = redis.url;
+  process.env.REDIS_KEY_PREFIX = redis.keyPrefix;
   return testUrl;
 }

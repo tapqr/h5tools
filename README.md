@@ -11,13 +11,14 @@
 - **Node >= 22.14**。22.13.x 上 `nest start` 会抛 `ERR_REQUIRE_CYCLE_MODULE`，与依赖树无关。
 - **npm >= 12**。系统自带的 npm 10.x 装不上这个仓库，原因写在 `.npmrc` 里。
   用 `npx -y npm@latest install`。
-- Docker（本机开发用的 Postgres 与 Redis 容器）
+- Docker（本机开发用的 Postgres 容器）
+- 能访问内网的 Redis（`10.0.13.142:6379`，**共享实例**，见下）
 
 ## 快速开始
 
 ```bash
 npx -y npm@latest install     # ⚠ 不要用系统 npm，见 .npmrc
-npm run db:up                 # 起本机开发用的 Postgres + Redis
+npm run db:up                 # 起本机开发用的 Postgres（Redis 用内网共享实例）
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 npm run db:migrate -w @h5tools/api   # 建表
@@ -46,7 +47,7 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 | `npm run build` | 按 shared → api → web 顺序构建 |
 | `npm test` | 前后端测试 |
 | `npm run lint` | oxlint |
-| `npm run db:up` / `db:down` | 本机开发数据库容器 |
+| `npm run db:up` / `db:down` | 本机开发用的 Postgres 容器 |
 | `npm run db:migrate -w @h5tools/api` | 改完 schema 后生成并应用迁移 |
 | `npm run db:studio -w @h5tools/api` | Prisma Studio |
 | `npm run user:list -w @h5tools/api` | 列出账号与改密状态 |
@@ -63,6 +64,13 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 **Prisma 的生成产物不进版本库。** `apps/api/src/generated/` 由 `prisma generate`
 产出，`build` 和 `dev` 脚本都会先跑一次它，所以克隆下来直接 `npm run dev` 就行，
 不需要记得手动生成。
+
+**Redis 是一台共享实例，所有 key 必须带前缀。** 那台机器上有别的项目在跑（切过去时
+`db0/2/4/7/10/12/13/15` 都已有数据）。`REDIS_KEY_PREFIX` 每个环境不同：
+生产 `h5tools:` / 本地 `h5tools-dev:` / 测试 `h5tools-test:`。
+**绝不要对它执行 `flushdb` 或 `flushall`。** 测试的隔离靠 `deleteAllPrefixed()`
+按前缀清理，不是清库 —— 早先那版用 `flushdb`，若不改就切过去，第一次 `npm test`
+会清掉 `db15` 上别人的 103 个 key。
 
 **测试连真实的独立测试库，不 mock Prisma。** `apps/api/vitest.globalSetup.ts`
 会自动把迁移应用到 `h5tools_test`，用例之间靠清表隔离。`src/test/env.ts` 里有两道

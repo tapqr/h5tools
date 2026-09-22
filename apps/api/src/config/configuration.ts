@@ -30,4 +30,16 @@ export default () => ({
 
   /** session、天气缓存、限流都放这里 */
   redisUrl: process.env.REDIS_URL ?? 'redis://127.0.0.1:63790',
+
+  /**
+   * 所有 Redis key 的统一前缀。
+   *
+   * 这不是洁癖:我们连的是一台**共享** Redis,上面有别的项目在跑
+   * (切过去时 db0/2/4/7/10/12/13/15 都已有数据)。没有前缀就会撞 key;
+   * 更要命的是测试 —— 靠 `flushdb` 做隔离会把整个 db 清空,
+   * 连别人的数据一起清掉。有了前缀,测试只清自己那一撮。
+   *
+   * 每个环境用不同的值:生产 h5tools: / 本地 h5tools-dev: / 测试 h5tools-test:
+   */
+  redisKeyPrefix: process.env.REDIS_KEY_PREFIX ?? 'h5tools-dev:',
 });

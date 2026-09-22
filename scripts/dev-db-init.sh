@@ -30,4 +30,4 @@ else
   echo "测试库 h5tools_test 已存在"
 fi
 
-echo "开发数据库就绪：postgres 127.0.0.1:54320 / redis 127.0.0.1:63790"
+echo "开发数据库就绪：postgres 127.0.0.1:54320（Redis 用内网共享实例，见 apps/api/.env）"

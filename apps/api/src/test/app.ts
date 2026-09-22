@@ -48,7 +48,9 @@ export async function createTestApp(): Promise<TestApp> {
     redis,
     async reset() {
       await resetDb(prisma);
-      await redis.client.flushdb();
+      // 刻意不是 flushdb：Redis 是共享的，上面还有别的项目。
+      // 只清本测试前缀下的 key。
+      await redis.deleteAllPrefixed();
     },
     async close() {
       await app.close();

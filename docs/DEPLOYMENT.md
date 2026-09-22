@@ -53,7 +53,8 @@ PORT=3100
 API_PREFIX=api
 APP_ORIGIN=https://tools.example.com:8443
 DATABASE_URL="postgresql://h5tools:密码@内网PG地址:5432/h5tools?schema=public"
-REDIS_URL="redis://内网Redis地址:6379"
+REDIS_URL="redis://:密码@内网Redis地址:6379"
+REDIS_KEY_PREFIX="h5tools:"
 ```
 
 `apps/web/.env.production`：
@@ -132,6 +133,16 @@ proxy_set_header X-Forwarded-Proto $scheme;
 然后换一个账号名从新 IP 登录，应该**不**受影响（说明 IP 维度算的是真实 IP，
 而不是把所有人都算成 nginx 那一个地址）。
 
+## ⚠ Redis 是共享实例
+
+`10.0.13.142:6379` 上有别的项目在跑。我们靠 **key 前缀**隔离，不靠库号 ——
+库号今天空不空是会变的。
+
+- 生产用 `REDIS_KEY_PREFIX=h5tools:`，与本地开发（`h5tools-dev:`）分开，
+  否则本地调试会踢掉线上用户的 session
+- **绝不要对这台 Redis 执行 `flushdb` / `flushall`**
+- 清理本项目数据用按前缀扫描删除，不要清库
+
 ## 常见故障
 
 | 症状 | 多半是 |
@@ -141,3 +152,4 @@ proxy_set_header X-Forwarded-Proto $scheme;
 | 能登录但刷新就掉线 | cookie 没种上。检查是不是 https（生产会下发 `Secure`，http 下浏览器不回传） |
 | 谁都登录不上、提示尝试过于频繁 | `X-Forwarded-For` 没转发，所有人共享同一个 IP 额度 |
 | 建表报 `permission denied for schema public` | PG 15+ 的 schema 授权那一步漏了，见第一节 |
+| 线上用户莫名被登出 | `REDIS_KEY_PREFIX` 与本地开发或测试用了同一个值 |

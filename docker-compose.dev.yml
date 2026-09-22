@@ -1,6 +1,10 @@
-# 本机开发用的 Postgres 与 Redis。
+# 本机开发用的 Postgres。
 #
-# 部署机上这两个服务已经有了，不要用这份文件去部署 —— 它只服务于本地开发。
+# Redis 不在这里 —— 开发和测试都直连内网那台共享 Redis（见 apps/api/.env）。
+# 那台机器上有别的项目在跑，所以我们的 key 全部带前缀，
+# 测试也只按前缀清理，**绝不 flushdb**。
+#
+# 部署机上 Postgres 也已经有了，不要用这份文件去部署 —— 它只服务于本地开发。
 #
 # 端口刻意绑在 127.0.0.1 上且用高位端口：这台机器是共享的，
 # 已有别人的容器占着 20380(mysql) / 20381(redis)，别撞上也别对外暴露。
@@ -25,19 +29,6 @@ services:
       timeout: 3s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    container_name: h5tools-dev-redis
-    restart: unless-stopped
-    ports:
-      - '127.0.0.1:63790:6379'
-    volumes:
-      - h5tools_redis:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
 # 具名卷，不用 bind mount。
 #
@@ -48,4 +39,3 @@ services:
 # 测试库改由 scripts/dev-db-init.sh 在启动后创建,见 npm run db:up。
 volumes:
   h5tools_pg:
-  h5tools_redis:
