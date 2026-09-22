@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+*.tsbuildinfo
+.vite/
+# 禁止 bun：见 AGENTS.md（会改 node_modules 属主，共享环境下丢写权限）
+bun.lock
+bun.lockb
+
+# 注意:.scratch/ 是**有意共享**的 —— issue 和 spec 以 markdown 形式存放在那里,
+# 见 docs/agents/issue-tracker.md。不要把它加进忽略列表。
+
+# tsconfig.node.json 的 composite 产物（正常应落在 node_modules/.tmp 下）
+apps/web/vite.config.js
+apps/web/vite.config.d.ts
+apps/web/vitest.config.js
+apps/web/vitest.config.d.ts
