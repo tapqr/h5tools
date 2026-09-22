@@ -20,7 +20,7 @@
     "test": "npm run test -w @h5tools/api && npm run test -w @h5tools/web",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write .",
-    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d && bash scripts/dev-db-init.sh",
     "db:down": "docker compose -f docker-compose.dev.yml down"
   },
   "devDependencies": {
