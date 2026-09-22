@@ -74,11 +74,25 @@ npm run user:seed -w @h5tools/api    # 建初始账号 admin / 123123
 npm run user:passwd -- admin         # ⚠ 上线前必须改，见下
 ```
 
-把产物放到 nginx 能读到的地方：
+**原地部署，不复制文件**：仓库直接放在服务器上（当前是 `/apt/servers/h5tools`），
+nginx 的 `root` 和 PM2 的 `cwd` 都指向仓库内的目录。
 
-```
-/srv/h5tools/web/     <- apps/web/dist/ 的内容
-/srv/h5tools/api/     <- apps/api（含 dist/、node_modules/、prisma/、.env）
+| 用途 | 路径 |
+|---|---|
+| nginx `root` | `<仓库>/apps/web/dist` |
+| PM2 `cwd` | `<仓库>/apps/api` |
+| 配置 | `<仓库>/apps/api/.env`（已被 gitignore，`git pull` 不会覆盖） |
+
+这样少一步复制，也少一类"改了代码忘了同步"的问题。代价是**更新流程必须是
+先 `git pull` 再 `npm run build`** —— `dist/` 被 gitignore，pull 下来的是源码，
+不重新构建的话页面还是旧的。
+
+⚠ nginx 的运行用户（通常 `www-data`）必须能**穿过整条路径**到 `dist`。
+`/apt`、`/apt/servers`、仓库目录任何一级少了 `x` 权限都会 403，
+而 nginx 只会说 `Permission denied`、不告诉你卡在哪一级。查法：
+
+```bash
+sudo -u www-data ls /apt/servers/h5tools/apps/web/dist
 ```
 
 > ⚠ **生产上只用 `db:deploy`，不要用 `db:migrate`。**
@@ -104,8 +118,8 @@ npm run user:passwd -- admin         # ⚠ 上线前必须改，见下
 ## 四、起进程
 
 ```bash
-cp deploy/ecosystem.config.cjs /srv/h5tools/
-pm2 start /srv/h5tools/ecosystem.config.cjs
+# 原地部署：直接用仓库里的配置，改一下里面的 cwd 即可
+pm2 start deploy/ecosystem.config.cjs
 pm2 save
 pm2 startup    # 按它输出的命令执行一次（需要 root），实现开机自启
 
@@ -175,3 +189,5 @@ proxy_set_header X-Forwarded-Proto $scheme;
 | `P1013 invalid port number` | 连接串里多写了 `http://`，主机部分只要 `host:port` |
 | 认证失败但密码明明是对的 | 密码里有 `#` 等特殊字符没做百分号编码 |
 | 线上用户莫名被登出 | `REDIS_KEY_PREFIX` 与本地开发或测试用了同一个值 |
+| 页面 403 | nginx 用户穿不过仓库路径，逐级 `sudo -u www-data ls` 查是哪一级 |
+| 改了代码但页面没变 | 原地部署下 `git pull` 只更新源码，**必须再 `npm run build`** |

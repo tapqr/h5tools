@@ -7,7 +7,9 @@ module.exports = {
   apps: [
     {
       name: 'h5tools-api',
-      cwd: '/srv/h5tools/api',
+      // 原地部署：直接指向仓库里的 apps/api，不复制文件。
+      // 换机器时改这一个路径。
+      cwd: '/apt/servers/h5tools/apps/api',
       script: 'dist/main.js',
       // 单实例。不是因为有进程内状态（session/缓存/限流都在 Redis 里，
       // 多实例本身是可以的），而是这个站的负载根本用不着第二个进程。

@@ -22,8 +22,13 @@ server {
     # http:// + 非 localhost 一律**静默**拒绝。天气页的自动定位会直接废掉。
     # 顺带 Secure cookie 也需要它。
 
-    # 前端构建产物
-    root /srv/h5tools/web;
+    # 前端构建产物。原地部署：直接指向仓库里的 dist，不复制。
+    #
+    # ⚠ nginx 的运行用户（通常是 www-data/nginx）必须能**穿过整条路径**：
+    #   /apt → /apt/servers → /apt/servers/h5tools → .../apps/web/dist
+    # 其中任何一级少了 x 权限都会 403，而错误信息只会说 "Permission denied"，
+    # 不会告诉你卡在哪一级。查法：sudo -u www-data ls <每一级目录>
+    root /apt/servers/h5tools/apps/web/dist;
     index index.html;
 
     # 带 hash 的静态资源可以长缓存
