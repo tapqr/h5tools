@@ -20,6 +20,8 @@ npx -y npm@latest install     # ⚠ 不要用系统 npm，见 .npmrc
 npm run db:up                 # 起本机开发用的 Postgres + Redis
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
+npm run db:migrate -w @h5tools/api   # 建表
+npm run user:seed -w @h5tools/api    # 建初始账号 admin / 123123
 npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 ```
 
@@ -47,6 +49,9 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 | `npm run db:up` / `db:down` | 本机开发数据库容器 |
 | `npm run db:migrate -w @h5tools/api` | 改完 schema 后生成并应用迁移 |
 | `npm run db:studio -w @h5tools/api` | Prisma Studio |
+| `npm run user:list -w @h5tools/api` | 列出账号与改密状态 |
+| `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建账号，随机强密码只打印一次 |
+| `npm run user:passwd -w @h5tools/api -- admin` | 改密码，不回显、不进 shell history |
 
 ## 两件容易踩的事
 
@@ -63,6 +68,10 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 会自动把迁移应用到 `h5tools_test`，用例之间靠清表隔离。`src/test/env.ts` 里有两道
 守卫：`DATABASE_URL_TEST` 必须存在、且库名必须以 `_test` 结尾 —— 测试会清表，
 指错库就是清掉正在看的数据。
+
+**生产环境不允许带着初始口令启动。** admin 还是 `123123` 时后端会拒绝启动并打印改密命令。
+这个站公网可达，挂上去几小时内就会有扫描器跑弱口令字典，而整套安全方案押在这一个密码上 ——
+「上线前忘了改密码」不能只靠自觉。
 
 **不要用 bun 装依赖。** 仓库里曾经 npm/bun 混用过；bun 重装会改 `node_modules`
 的属主与 ACL，共享环境下 claude-svc 会失去写权限。

@@ -13,7 +13,12 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "user": "npm run build && node dist/cli/user.js",
+    "user:create": "npm run user -- create",
+    "user:passwd": "npm run user -- passwd",
+    "user:list": "npm run user -- list",
+    "user:seed": "npm run user -- seed"
   },
   "dependencies": {
     "@h5tools/shared": "*",
