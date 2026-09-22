@@ -69,7 +69,7 @@ VITE_BASE_PATH=/
 npx -y npm@latest install     # ⚠ 不要用系统 npm
 npm run build                 # shared -> api -> web
 
-npm run db:migrate -w @h5tools/api   # 建表
+npm run db:deploy -w @h5tools/api    # 建表（只应用已有迁移）
 npm run user:seed -w @h5tools/api    # 建初始账号 admin / 123123
 npm run user:passwd -- admin         # ⚠ 上线前必须改，见下
 ```
@@ -80,6 +80,26 @@ npm run user:passwd -- admin         # ⚠ 上线前必须改，见下
 /srv/h5tools/web/     <- apps/web/dist/ 的内容
 /srv/h5tools/api/     <- apps/api（含 dist/、node_modules/、prisma/、.env）
 ```
+
+> ⚠ **生产上只用 `db:deploy`，不要用 `db:migrate`。**
+> 后者是 `prisma migrate dev` —— 开发命令，检测到 schema 漂移时会**提示重置整个数据库**，
+> 还会自作主张生成新的迁移文件。生产库上这两件事都不能发生。
+
+### 连接串里的特殊字符要转义
+
+主机部分只写 `host:port`，**不带 `http://`**；密码里的这些字符必须百分号编码：
+
+| 字符 | 写成 |
+|---|---|
+| `#` | `%23` |
+| `@` | `%40` |
+| `/` | `%2F` |
+| `:` | `%3A` |
+| `?` | `%3F` |
+| `%` | `%25` |
+
+不转义的典型症状：带 `http://` 报 `P1013 invalid port number`；
+密码里有 `#` 则 `#` 之后的内容被当作 URL 片段**静默截掉**，表现为认证失败或库名不对。
 
 ## 四、起进程
 
@@ -152,4 +172,6 @@ proxy_set_header X-Forwarded-Proto $scheme;
 | 能登录但刷新就掉线 | cookie 没种上。检查是不是 https（生产会下发 `Secure`，http 下浏览器不回传） |
 | 谁都登录不上、提示尝试过于频繁 | `X-Forwarded-For` 没转发，所有人共享同一个 IP 额度 |
 | 建表报 `permission denied for schema public` | PG 15+ 的 schema 授权那一步漏了，见第一节 |
+| `P1013 invalid port number` | 连接串里多写了 `http://`，主机部分只要 `host:port` |
+| 认证失败但密码明明是对的 | 密码里有 `#` 等特殊字符没做百分号编码 |
 | 线上用户莫名被登出 | `REDIS_KEY_PREFIX` 与本地开发或测试用了同一个值 |
