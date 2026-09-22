@@ -2,5 +2,6 @@
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
-  }
+  },
+  "ignorePatterns": ["src/generated/**"]
 }

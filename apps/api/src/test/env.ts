@@ -29,9 +29,28 @@ export function readTestDatabaseUrl(): string {
   return testUrl;
 }
 
-/** 把当前进程切到测试库 */
+/**
+ * 读出测试用的 Redis 地址并校验它**不是 0 号库**。
+ *
+ * 测试会 flushdb。0 号库是开发时 session 和缓存所在的地方，
+ * 指错了就是把自己登出、把缓存清光 —— 和测试库那道守卫是同一个道理。
+ */
+export function readTestRedisUrl(): string {
+  const url = process.env.REDIS_URL_TEST;
+  if (!url) {
+    throw new Error('缺少 REDIS_URL_TEST —— 测试会 flushdb，必须用独立的 Redis 库');
+  }
+  const db = new URL(url).pathname.replace('/', '');
+  if (!db || db === '0') {
+    throw new Error(`REDIS_URL_TEST 必须显式指定非 0 号库（如 .../15），当前：${url}`);
+  }
+  return url;
+}
+
+/** 把当前进程切到测试库与测试用 Redis */
 export function useTestDatabase(): string {
   const testUrl = readTestDatabaseUrl();
   process.env.DATABASE_URL = testUrl;
+  process.env.REDIS_URL = readTestRedisUrl();
   return testUrl;
 }

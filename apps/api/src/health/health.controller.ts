@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '../auth/public.decorator.js';
 
 /**
  * 健康检查。issue 04 接入全局 AuthGuard 后，它会是少数 @Public() 路由之一 ——
@@ -9,6 +10,7 @@ import { Controller, Get } from '@nestjs/common';
  */
 @Controller('health')
 export class HealthController {
+  @Public()
   @Get()
   check(): { status: 'ok' } {
     return { status: 'ok' };
