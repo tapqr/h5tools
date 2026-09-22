@@ -21,4 +21,13 @@ export default () => ({
    * 它调的是 /api 相对路径,代码里没有写死的域名端口。
    */
   appOrigin: process.env.APP_ORIGIN ?? 'http://localhost:5173',
+
+  /**
+   * 业务库连接串。测试时由测试基建覆盖成 DATABASE_URL_TEST ——
+   * 「连哪个库」必须是显式选择,否则会出现"以为在测试库上、其实清了业务库"。
+   */
+  databaseUrl: process.env.DATABASE_URL ?? '',
+
+  /** session、天气缓存、限流都放这里 */
+  redisUrl: process.env.REDIS_URL ?? 'redis://127.0.0.1:63790',
 });

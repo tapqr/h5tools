@@ -1,0 +1,32 @@
+// 数据模型的唯一来源。
+//
+// 每个业务表都带 userId 外键 —— 登录是「多用户模型，单用户交互」：
+// 不做注册页，账号靠命令行脚本建，但数据模型从第一天起就是对的。
+// 事后从「无用户概念」改成「有用户」要写迁移、回填、改掉每一个查询。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String @id @default(uuid()) @db.Uuid
+  username     String @unique
+  displayName  String
+
+  /// argon2id。不是 bcrypt，更不是 sha256。
+  passwordHash String
+
+  /// 初始账号由 seed 建出，此字段为 null 表示密码从未改过。
+  /// 生产环境启动时据此拒绝带着初始弱口令上线（见 issue 04）。
+  passwordChangedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

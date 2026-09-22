@@ -20,3 +20,6 @@ apps/web/vite.config.js
 apps/web/vite.config.d.ts
 apps/web/vitest.config.js
 apps/web/vitest.config.d.ts
+
+# Prisma 7 的 generator 产物（每次 prisma generate 重新生成）
+apps/api/src/generated/

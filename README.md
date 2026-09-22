@@ -45,6 +45,8 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 | `npm test` | 前后端测试 |
 | `npm run lint` | oxlint |
 | `npm run db:up` / `db:down` | 本机开发数据库容器 |
+| `npm run db:migrate -w @h5tools/api` | 改完 schema 后生成并应用迁移 |
+| `npm run db:studio -w @h5tools/api` | Prisma Studio |
 
 ## 两件容易踩的事
 
@@ -52,6 +54,15 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 这样改 shared 里的字段名，前后端会在**增量构建**下同时飘红 —— 这正是建这个包的目的。
 如果只在 `package.json` 里依赖而不声明 `references`，`tsc -b` 会因为缓存判断为"无需重建"
 而放过类型变更，那个保障就是假的。
+
+**Prisma 的生成产物不进版本库。** `apps/api/src/generated/` 由 `prisma generate`
+产出，`build` 和 `dev` 脚本都会先跑一次它，所以克隆下来直接 `npm run dev` 就行，
+不需要记得手动生成。
+
+**测试连真实的独立测试库，不 mock Prisma。** `apps/api/vitest.globalSetup.ts`
+会自动把迁移应用到 `h5tools_test`，用例之间靠清表隔离。`src/test/env.ts` 里有两道
+守卫：`DATABASE_URL_TEST` 必须存在、且库名必须以 `_test` 结尾 —— 测试会清表，
+指错库就是清掉正在看的数据。
 
 **不要用 bun 装依赖。** 仓库里曾经 npm/bun 混用过；bun 重装会改 `node_modules`
 的属主与 ACL，共享环境下 claude-svc 会失去写权限。
