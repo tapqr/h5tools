@@ -169,7 +169,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 
 ## ⚠ Redis 是共享实例
 
-`10.0.13.142:6379` 上有别的项目在跑。我们靠 **key 前缀**隔离，不靠库号 ——
+内网那台 Redis 上有别的项目在跑。我们靠 **key 前缀**隔离，不靠库号 ——
 库号今天空不空是会变的。
 
 - 生产用 `REDIS_KEY_PREFIX=h5tools:`，与本地开发（`h5tools-dev:`）分开，

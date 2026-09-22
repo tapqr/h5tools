@@ -85,7 +85,7 @@ describe('URL 导航 (契约)', () => {
     it('接受内网地址（无顶级域名、纯 IP、带端口）', async () => {
       const cat = await createCategory('内网');
       await createLink(cat.id, 'Jenkins', 'http://jenkins:8080');
-      await createLink(cat.id, 'Redis 面板', 'http://10.0.13.142:6379');
+      await createLink(cat.id, 'Redis 面板', 'http://192.0.2.10:6379');
       await createLink(cat.id, '内网 Wiki', 'http://wiki/page/1');
       expect((await getTree()).categories[0]!.links).toHaveLength(3);
     });

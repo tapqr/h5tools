@@ -12,7 +12,7 @@
 - **npm >= 12**。系统自带的 npm 10.x 装不上这个仓库，原因写在 `.npmrc` 里。
   用 `npx -y npm@latest install`。
 - Docker（本机开发用的 Postgres 容器）
-- 能访问内网的 Redis（`10.0.13.142:6379`，**共享实例**，见下）
+- 能访问内网的 Redis（地址见 `apps/api/.env`，**共享实例**，见下）
 
 ## 快速开始
 
