@@ -2,7 +2,7 @@
   <div class="notfound">
     <h1>404</h1>
     <p>没有这个页面。</p>
-    <RouterLink :to="{ name: 'home' }">回到首页</RouterLink>
+    <RouterLink :to="{ name: 'nav' }">回到导航</RouterLink>
   </div>
 </template>
 

@@ -16,7 +16,7 @@ const other = computed(() => (platform.isMobile ? '电脑' : '手机'));
       <code>{{ route.query.page }}</code> 只适配{{ platform.isMobile ? 'PC' : '移动端' }}，
       请用{{ other }}打开。
     </p>
-    <RouterLink class="unsupported__back" :to="{ name: 'home' }">回到首页</RouterLink>
+    <RouterLink class="unsupported__back" :to="{ name: 'nav' }">回到导航</RouterLink>
   </div>
 </template>
 

@@ -16,6 +16,17 @@ describe('路由的端声明', () => {
     expect(settings?.meta?.platforms).toEqual(['pc']);
   });
 
+  it('链接管理页只适配 PC', () => {
+    const admin = routes.find((r) => r.name === 'nav-admin');
+    expect(admin?.meta?.platforms).toEqual(['pc']);
+  });
+
+  /** 管理页不进导航栏：手机上根本进不去，PC 上从导航页顶部进 */
+  it('管理页不出现在导航入口里', () => {
+    const admin = routes.find((r) => r.name === 'nav-admin');
+    expect(admin?.meta?.nav).toBeUndefined();
+  });
+
   /**
    * 全站默认需要登录。漏标 public 的后果是「要登录才能看」（安全），
    * 误标 public 的后果是「裸奔」（不安全）—— 所以默认值必须是前者。

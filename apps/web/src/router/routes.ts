@@ -24,11 +24,20 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('../pages/LoginPage.vue'),
     meta: { public: true, platforms: ['pc', 'mobile'], fullBleed: true },
   },
+  // 打开站点直接进导航页 —— 这个站的主用途就是"打开就点"
+  { path: '/', redirect: { name: 'nav' } },
   {
-    path: '/',
-    name: 'home',
-    component: () => import('../pages/HomePage.vue'),
-    meta: { platforms: ['pc', 'mobile'], nav: { title: '首页', icon: '⌂', order: 1 } },
+    path: '/nav',
+    name: 'nav',
+    component: () => import('../pages/NavPage.vue'),
+    meta: { platforms: ['pc', 'mobile'], nav: { title: '导航', icon: '⌂', order: 1 } },
+  },
+  {
+    path: '/nav/admin',
+    name: 'nav-admin',
+    component: () => import('../pages/NavAdminPage.vue'),
+    // 只适配 PC：拖拽排序和表单在手机上没法好好用，也不打算为它写一套
+    meta: { platforms: ['pc'] },
   },
   {
     path: '/settings',
