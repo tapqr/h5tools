@@ -28,6 +28,43 @@ export default () => ({
    */
   databaseUrl: process.env.DATABASE_URL ?? '',
 
+  // --- 以下为天气模块搬迁带来的配置，原样保留语义 ---
+
+  cache: {
+    ttlSeconds: Number(process.env.WEATHER_CACHE_TTL_SECONDS ?? 1800),
+    // 全部数据源都失败时用的短 TTL：够挡住瞬间的重复请求，又能让上游恢复后很快自愈
+    failureTtlSeconds: Number(process.env.WEATHER_CACHE_FAILURE_TTL_SECONDS ?? 60),
+  },
+
+  qweather: {
+    apiHost: process.env.QWEATHER_API_HOST ?? '',
+    apiKey: process.env.QWEATHER_API_KEY ?? '',
+    // 'v1'(默认)或 'v7'。v7 已被上游标记弃用，两份实现都留在 providers/qweather/ 下，
+    // v1 出问题时改这一个变量即可回滚，不必回滚代码。
+    // 用 || 而不是 ??：.env 里写了 `QWEATHER_API_VERSION=`（空串）时，
+    // ?? 兜不住空串，会让 providers 在启动时抛「must be 'v1' or 'v7'」。
+    // 空着和没写应该是一个意思。
+    apiVersion: process.env.QWEATHER_API_VERSION || 'v1',
+  },
+
+  caiyun: {
+    token: process.env.CAIYUN_TOKEN ?? '',
+  },
+
+  throttle: {
+    ttlMs: Number(process.env.THROTTLE_TTL_MS ?? 60000),
+    limit: Number(process.env.THROTTLE_LIMIT ?? 30),
+  },
+
+  geo: {
+    // 地理数据几乎不变，TTL 开得比天气长得多
+    cacheTtlSeconds: Number(process.env.GEO_CACHE_TTL_SECONDS ?? 86400),
+    throttleTtlMs: Number(process.env.GEO_THROTTLE_TTL_MS ?? 60000),
+    // @nestjs/throttler 的 key 按 ClassName-HandlerName-limiterName-ip 生成，是 per-route 的 ——
+    // 这个值是 /geo/reverse、/geo/search、/geo/top 各自的额度，三个路由合计是它的 3 倍。
+    throttleLimit: Number(process.env.GEO_THROTTLE_LIMIT ?? 20),
+  },
+
   /** session、天气缓存、限流都放这里 */
   redisUrl: process.env.REDIS_URL ?? 'redis://127.0.0.1:63790',
 

@@ -1,5 +1,5 @@
 import type { Server } from 'node:http';
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
@@ -9,6 +9,14 @@ import { RedisService } from '../redis/redis.service.js';
 import { resetDb } from './db.js';
 import request from 'supertest';
 import { PasswordService } from '../auth/password.service.js';
+
+export interface CreateTestAppOptions {
+  /**
+   * 在 compile 之前改造 TestingModule —— 搬迁过来的天气契约测试用它把
+   * WEATHER_PROVIDERS 换成假 provider，避免真的去打第三方接口。
+   */
+  customize?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+}
 
 export interface TestApp {
   app: NestExpressApplication;
@@ -29,8 +37,9 @@ export interface TestApp {
  * 只 import 单个 controller 的测试模块**不会**带上它，那样测出来的
  * 「接口能访问」是假的。
  */
-export async function createTestApp(): Promise<TestApp> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
+  const base = Test.createTestingModule({ imports: [AppModule] });
+  const moduleRef = await (options.customize ? options.customize(base) : base).compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
 
   app.set('trust proxy', 1);
@@ -90,4 +99,25 @@ export async function createUserAndLogin(
     username,
     cookie: res.headers['set-cookie'] as unknown as string[],
   };
+}
+
+/**
+ * 登录后的 supertest agent —— 它会自动带上 cookie，调用方不必在每个请求上
+ * 手工 .set('Cookie', ...)。搬迁过来的天气契约测试有十几个请求，逐个加太啰嗦。
+ */
+export async function loggedInAgent(
+  ctx: TestApp,
+  username = 'tester',
+): Promise<ReturnType<typeof request.agent>> {
+  const password = `password-for-${username}`;
+  await ctx.prisma.user.create({
+    data: {
+      username,
+      displayName: username,
+      passwordHash: await ctx.app.get(PasswordService).hash(password),
+    },
+  });
+  const agent = request.agent(ctx.server);
+  await agent.post('/auth/login').send({ username, password }).expect(200);
+  return agent;
 }

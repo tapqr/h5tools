@@ -1,0 +1,106 @@
+import { createTestApp, loggedInAgent, type TestApp } from '../test/app.js';
+import { WEATHER_PROVIDERS } from './providers/providers.tokens.js';
+import { NormalizedWeather, WeatherProvider } from './interfaces/weather.interfaces.js';
+
+// 端到端契约测试:真正走 HTTP 层(supertest),而不是像 weather.controller.spec.ts 那样
+// 直接拿一个已经合法的 { lat, lon } 对象调用 controller 方法。这样才能覆盖:
+// - DTO 能不能把 query string 里的字符串转成数字(@Type(() => Number) + IsLatitude)
+// - 缺参数/非法参数是否真的返回 400
+// - 响应体的形状(前端马上要照着这个形状写代码)
+//
+// 用 .overrideProvider(WEATHER_PROVIDERS) 换成假 provider,不会真的打第三方 API,
+// 所以不需要 .env 里的真实凭据。
+//
+// 搬迁后的两处变化:
+// 1. 天气接口**需要登录**(全局 AuthGuard 默认拒绝),所以用一个已登录的
+//    supertest agent 发请求 —— 它自动带 cookie,不用在每个请求上手工 set。
+// 2. 应用由 createTestApp 装配,与 main.ts 形态一致(cookie-parser、ValidationPipe)。
+
+function fakeWeather(provider: NormalizedWeather['provider']): NormalizedWeather {
+  return {
+    provider,
+    updatedAt: '2026-09-02T00:00:00+08:00',
+    // 这是**契约**:前端照着这个形状写代码,所以这里给全字段(含新增的空气质量、
+    // 气压/能见度/风向风力,以及逐日的昼夜两个天气文案),而不是留空数组
+    current: {
+      tempC: 20,
+      feelsLikeC: 20,
+      conditionText: '晴',
+      humidityPercent: 50,
+      windSpeedKph: 10,
+      windDirectionDeg: 90,
+      windScale: 2,
+      pressureHpa: 1011,
+      visibilityKm: 20,
+      precipMm: 0,
+      airQuality: { aqi: 42, category: '优', pm25: 20 },
+    },
+    hourly: [
+      { time: '2026-09-02T15:00+08:00', tempC: 21, conditionText: '多云', precipitationProbabilityPercent: 20 },
+    ],
+    daily: [
+      {
+        date: '2026-09-02',
+        tempMinC: 15,
+        tempMaxC: 25,
+        conditionText: '小雨',
+        // 昼夜可以不同,这正是加这个字段的原因
+        nightConditionText: '中雨',
+        precipitationProbabilityPercent: 60,
+      },
+    ],
+  };
+}
+
+describe('GET /weather (e2e)', () => {
+  let ctx: TestApp;
+  let agent: Awaited<ReturnType<typeof loggedInAgent>>;
+
+  beforeAll(async () => {
+    // 顺序与 providers.module.ts 的真实注册顺序保持一致(彩云在前),
+    // 这样这份契约测试锁定的形状就是前端实际会收到的形状
+    const okProvider: WeatherProvider = {
+      name: 'caiyun',
+      getForecast: vi.fn().mockResolvedValue(fakeWeather('caiyun')),
+    };
+    const failingProvider: WeatherProvider = {
+      name: 'qweather',
+      getForecast: vi.fn().mockRejectedValue(new Error('upstream unavailable')),
+    };
+
+    ctx = await createTestApp({
+      customize: (builder) =>
+        builder.overrideProvider(WEATHER_PROVIDERS).useValue([okProvider, failingProvider]),
+    });
+    await ctx.reset();
+    agent = await loggedInAgent(ctx, 'weather-tester');
+  });
+
+  afterAll(async () => {
+    await ctx.close();
+  });
+
+  it('returns 200 with an aggregated results array shaped for the frontend', async () => {
+    const response = await agent.get('/weather').query({ lat: 39.92, lon: 116.41 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      results: [
+        { provider: 'caiyun', status: 'ok', data: fakeWeather('caiyun') },
+        { provider: 'qweather', status: 'error', message: expect.any(String) },
+      ],
+    });
+  });
+
+  it('returns 400 when lat is not a valid number', async () => {
+    const response = await agent.get('/weather').query({ lat: 'abc', lon: 116.41 });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when lon is missing', async () => {
+    const response = await agent.get('/weather').query({ lat: 39.92 });
+
+    expect(response.status).toBe(400);
+  });
+});
