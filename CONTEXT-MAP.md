@@ -11,7 +11,7 @@
 | 上下文 | 文档 | 代码 |
 |---|---|---|
 | 账号与会话 | [`docs/contexts/auth/`](docs/contexts/auth/) | `apps/api/src/auth`、`apps/api/src/user`、`apps/web/src/stores/auth.ts` |
-| URL 导航 | [`docs/contexts/nav/`](docs/contexts/nav/) | `apps/api/src/nav`、`apps/web/src/pages/nav` |
-| 天气对比 | [`docs/contexts/weather/`](docs/contexts/weather/) | `apps/api/src/weather`、`apps/api/src/geo`、`apps/web/src/pages/weather` |
+| URL 导航 | [`docs/contexts/nav/`](docs/contexts/nav/) | `apps/api/src/nav`、`apps/web/src/nav`、`apps/web/src/pages/Nav*.vue` |
+| 天气对比 | [`docs/contexts/weather/`](docs/contexts/weather/) | `apps/api/src/weather`、`apps/api/src/geo`、`apps/web/src/weather`、`apps/web/src/pages/WeatherPage.vue` |
 
 系统级的决策（跨上下文的）放在 `docs/adr/`。
