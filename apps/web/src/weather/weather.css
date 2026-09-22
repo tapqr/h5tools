@@ -1,0 +1,140 @@
+/*
+ * 天气页的基调与设计 token。
+ *
+ * ⚠ 作用域是 `.weather-page` 而不是 `:root` —— 这是搬迁时刻意降的级。
+ * 原项目是个独立应用，写在 `:root` 上没问题；搬进多页应用后，写在 `:root` 上
+ * 会污染全站：离开天气页后 `--ink`、`--gap` 这些变量还留着，
+ * 其他页面用了同名变量就会被带跑。组件里的 scoped style 一行都不用动 ——
+ * 它们只引用 var()，变量定义在哪个祖先上都行。
+ *
+ * 配色由两个维度驱动,互不干涉:
+ *   1. 昼夜(data-daypart)—— 决定页面底色和文字明度。昼夜是客观事实,两家数据源没有分歧。
+ *   2. 天气(卡片上的 data-condition)—— 决定每张数据源卡片自己的色调,见 ProviderCard.vue。
+ *
+ * 这里刻意不跟随 prefers-color-scheme:天气应用的配色是内容的一部分(它在表达"外面现在
+ * 什么样"),不是界面外壳偏好。白天就该是亮的,哪怕系统开着深色模式 —— iOS 天气同理。
+ */
+
+.weather-page {
+  --font-sans: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  --radius-card: 20px;
+  --radius-chip: 14px;
+  --gap: 14px;
+  --page-pad: 18px;
+
+  --card-border: rgba(255, 255, 255, 0.14);
+  --card-veil: rgba(255, 255, 255, 0.1);
+
+  /* 没有专属配色的数据源走这个兜底色(加第三家时先能画出线,再决定给不给它专属色) */
+  --series-fallback: rgba(128, 140, 160, 0.85);
+
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * 明度关系:页面背景始终比卡片浅,卡片是"沉"进去的而不是"浮"起来的。
+ * 所以 --card-veil 用的是深色半透明(而不是常见的白色蒙版),叠在浅背景上自然压暗一档。
+ */
+
+/* 白天:很浅的天蓝到近白,深色文字 */
+.weather-page[data-daypart='day'] {
+  --sky-from: #d3e9fa;
+  --sky-via: #e7f3fd;
+  --sky-to: #f5fafe;
+  --ink: #0d2436;
+  --ink-dim: rgba(13, 36, 54, 0.62);
+  --ink-faint: rgba(13, 36, 54, 0.4);
+  --card-veil: rgba(13, 36, 54, 0.07);
+  --card-border: rgba(13, 36, 54, 0.1);
+
+  /* 曲线配色:彩云偏蓝、和风偏琥珀。浅背景上要用深色才够对比度 */
+  --series-caiyun: #1f6fb2;
+  --series-qweather: #b9761a;
+}
+
+/* 晨昏:浅橙粉到浅藕紫,深色文字 */
+.weather-page[data-daypart='twilight'] {
+  --sky-from: #f7d3b6;
+  --sky-via: #f0c6c2;
+  --sky-to: #d9c2d8;
+  --ink: #34192a;
+  --ink-dim: rgba(52, 25, 42, 0.66);
+  --ink-faint: rgba(52, 25, 42, 0.44);
+  --card-veil: rgba(52, 25, 42, 0.08);
+  --card-border: rgba(52, 25, 42, 0.12);
+
+  /* 晨昏背景本身是浅橙粉,琥珀线要压得更深才不糊在背景里 */
+  --series-caiyun: #1a5c9c;
+  --series-qweather: #98500f;
+}
+
+/* 夜间:中深蓝紫,浅色文字。背景不压到最暗,给卡片留出更深的一档 */
+.weather-page[data-daypart='night'] {
+  --sky-from: #37477e;
+  --sky-via: #2f3f70;
+  --sky-to: #283760;
+  --ink: #eef3ff;
+  --ink-dim: rgba(238, 243, 255, 0.7);
+  --ink-faint: rgba(238, 243, 255, 0.45);
+  --card-veil: rgba(4, 8, 24, 0.24);
+  --card-border: rgba(4, 8, 24, 0.32);
+
+  /* 夜间背景是深蓝紫,曲线要提亮 —— 白天那套深色在这里几乎看不见 */
+  --series-caiyun: #6cc5ff;
+  --series-qweather: #ffc069;
+}
+
+/*
+ * 以下原本是应用级的全局规则（`*` / `body` / `#app` / `button` / `ul` / `p`）。
+ *
+ * 搬迁时全部收进 `.weather-page` 作用域。原因不只是洁癖：这份 CSS 通过
+ * 非 scoped 的 <style> 引入，是**全局注入且永不卸载**的 —— 天气页是懒加载路由，
+ * 一旦访问过一次，`body` 的渐变背景和 `#app` 的 520px 限宽就会留在整个会话里，
+ * 把导航页也变成一条窄列、背景还是天气色。那正是搬迁要避免的"配色残留"。
+ */
+
+.weather-page * {
+  box-sizing: border-box;
+}
+
+/*
+ * 原来是 body + #app 两层：body 铺渐变背景，#app 限宽 520px 居中。
+ * 现在合成一层，由页面根节点自己承担 —— 外壳已经让位（fullBleed），
+ * 这一页确实占满整屏。
+ */
+.weather-page {
+  min-height: 100svh;
+  color: var(--ink);
+  background: linear-gradient(170deg, var(--sky-from) 0%, var(--sky-via) 45%, var(--sky-to) 100%);
+  background-attachment: fixed;
+  transition: background 600ms ease, color 300ms ease;
+}
+
+/* 移动端点按目标不小于 44px，且不出现选中高亮 */
+.weather-page button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.weather-page ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.weather-page h1,
+.weather-page h2,
+.weather-page h3,
+.weather-page p {
+  margin: 0;
+}

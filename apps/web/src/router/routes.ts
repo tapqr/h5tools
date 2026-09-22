@@ -40,6 +40,19 @@ export const routes: RouteRecordRaw[] = [
     meta: { platforms: ['pc'] },
   },
   {
+    path: '/weather',
+    name: 'weather',
+    component: () => import('../pages/WeatherPage.vue'),
+    // 它本来就没有媒体查询：内容锁在 520px 居中列，PC 上就是一条窄列，
+    // 这是天气类应用在桌面上的通行做法。两端都适配。
+    meta: {
+      platforms: ['pc', 'mobile'],
+      nav: { title: '天气', icon: '☀', order: 2 },
+      // 外壳让位：这一页有一整套随昼夜变色的沉浸式皮肤，罩个顶栏在上面很突兀
+      fullBleed: true,
+    },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../pages/SettingsPage.vue'),
