@@ -1,20 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { CurrentUser } from '@h5tools/shared';
+import { useAuthStore } from '../stores/auth';
+import { usePlatformStore } from '../stores/platform';
 
-// 占位首页。issue 11 之后这里会变成 URL 导航页。
-const user = ref<CurrentUser | null>(null);
+const auth = useAuthStore();
+const platform = usePlatformStore();
 </script>
 
 <template>
-  <main class="home">
-    <h1>h5tools</h1>
-    <p>{{ user ? user.displayName : '骨架已就绪。' }}</p>
-  </main>
+  <div class="home">
+    <h1>你好，{{ auth.user?.displayName }}</h1>
+    <p class="home__hint">
+      当前端：{{ platform.isPc ? 'PC' : '移动端' }}。功能正在陆续接入。
+    </p>
+  </div>
 </template>
 
 <style scoped>
 .home {
   padding: 24px;
+  max-width: 720px;
+}
+
+.home__hint {
+  color: var(--app-ink-dim);
 }
 </style>

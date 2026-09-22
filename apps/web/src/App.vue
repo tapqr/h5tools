@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 外壳(AppShell)在 issue 06 接入,这里先只放路由出口。
+import AppShell from './components/AppShell.vue';
 </script>
 
 <template>
-  <RouterView />
+  <AppShell />
 </template>
