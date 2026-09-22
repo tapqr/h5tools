@@ -1,0 +1,41 @@
+# 本机开发用的 Postgres。
+#
+# Redis 不在这里 —— 开发和测试都直连内网那台共享 Redis（见 apps/api/.env）。
+# 那台机器上有别的项目在跑，所以我们的 key 全部带前缀，
+# 测试也只按前缀清理，**绝不 flushdb**。
+#
+# 部署机上 Postgres 也已经有了，不要用这份文件去部署 —— 它只服务于本地开发。
+#
+# 端口刻意绑在 127.0.0.1 上且用高位端口：这台机器是共享的，
+# 已有别人的容器占着 20380(mysql) / 20381(redis)，别撞上也别对外暴露。
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: h5tools-dev-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: h5tools
+      POSTGRES_PASSWORD: h5tools_dev
+      POSTGRES_DB: h5tools
+      # 中文排序与大小写行为跟着线上走，避免"本地排序对、线上不对"
+      LANG: C.UTF-8
+    ports:
+      - '127.0.0.1:54320:5432'
+    volumes:
+      - h5tools_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U h5tools -d h5tools']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+# 具名卷，不用 bind mount。
+#
+# 这不是洁癖:rootless docker 走用户命名空间,容器内的 postgres 用户映射到宿主上
+# 是一个高位 uid,读不了这台机器上 ACL 受限的家目录(drwxrwx---+)。
+# 曾经把建库脚本挂进 /docker-entrypoint-initdb.d,容器直接起不来:
+#   ls: can't open '/docker-entrypoint-initdb.d/': Permission denied
+# 测试库改由 scripts/dev-db-init.sh 在启动后创建,见 npm run db:up。
+volumes:
+  h5tools_pg:

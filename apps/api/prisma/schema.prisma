@@ -1,0 +1,83 @@
+// 数据模型的唯一来源。
+//
+// 每个业务表都带 userId 外键 —— 登录是「多用户模型，单用户交互」：
+// 不做注册页，账号靠命令行脚本建，但数据模型从第一天起就是对的。
+// 事后从「无用户概念」改成「有用户」要写迁移、回填、改掉每一个查询。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String @id @default(uuid()) @db.Uuid
+  username     String @unique
+  displayName  String
+
+  /// argon2id。不是 bcrypt，更不是 sha256。
+  passwordHash String
+
+  /// 初始账号由 seed 建出，此字段为 null 表示密码从未改过。
+  /// 生产环境启动时据此拒绝带着初始弱口令上线（见 issue 04）。
+  passwordChangedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories Category[]
+
+  @@map("users")
+}
+
+/// 导航分类。固定两层（分类 -> 链接），不做嵌套。
+model Category {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name String
+
+  /// 手动排序。导航页的价值在于常用的排前面，按创建时间排等于把最早加的锁死在第一位。
+  sortOrder Int @default(0)
+
+  links Link[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// 查询永远带 userId，这个复合索引让它走索引而不是全表过滤
+  @@index([userId, sortOrder])
+  @@map("nav_categories")
+}
+
+model Link {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId String   @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name String
+  url  String
+
+  /// 图标 URL 或单个 emoji。为空时前端回落到「域名首字母色块」。
+  /// 刻意不做 favicon 抓取：个人工具里相当一部分是内网地址，
+  /// 而所有第三方 favicon 服务对内网域名一律抓不到。
+  icon String?
+  note String?
+
+  sortOrder Int @default(0)
+
+  /// 累加计数，**不衰减**。旧数据会一直霸占「常用」区，
+  /// 靠「重置统计」按钮手动绕过 —— 不引入只增不减的事件表。
+  clickCount    Int       @default(0)
+  lastClickedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId, sortOrder])
+  @@map("nav_links")
+}

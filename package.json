@@ -1,0 +1,36 @@
+{
+  "name": "h5tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.14",
+    "npm": ">=12"
+  },
+  "scripts": {
+    "dev": "concurrently -n shared,api,web -c gray,cyan,magenta \"npm:dev:shared\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:shared": "npm run dev -w @h5tools/shared",
+    "dev:api": "npm run dev -w @h5tools/api",
+    "dev:web": "npm run dev -w @h5tools/web",
+    "build": "npm run build -w @h5tools/shared && npm run build -w @h5tools/api && npm run build -w @h5tools/web",
+    "test": "npm run test -w @h5tools/api && npm run test -w @h5tools/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write .",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d && bash scripts/dev-db-init.sh",
+    "db:down": "docker compose -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2",
+    "typescript": "^6.0.2",
+    "vitest": "4.1.11"
+  },
+  "allowScripts": {
+    "prisma@7.10.0": true,
+    "@prisma/engines@7.10.0": true
+  }
+}

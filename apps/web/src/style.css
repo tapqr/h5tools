@@ -1,0 +1,48 @@
+/*
+ * 全站设计 token。
+ *
+ * ⚠ 天气页有它自己的一整套配色 token,作用域在 `.weather-page` 上而不是
+ * `:root`(搬迁时刻意降的级,见 issue 15)。两边的变量名不要撞 —— 撞了
+ * 会出现「离开天气页后配色残留」这类只在特定路径顺序下复现的问题。
+ */
+:root {
+  --font-sans: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  --app-bg: #f6f7f9;
+  --app-surface: #ffffff;
+  --app-border: rgba(16, 24, 40, 0.1);
+  --app-ink: #101828;
+  --app-ink-dim: rgba(16, 24, 40, 0.62);
+  --app-accent: #2563eb;
+
+  --app-radius: 12px;
+  --app-gap: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--app-bg);
+  color: var(--app-ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}

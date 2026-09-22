@@ -1,0 +1,62 @@
+# h5tools 的 nginx 配置样例。
+#
+# 站点挂**根路径**（子域名 + 端口），接口在 /api/，与前端同域 —— 不需要配 CORS。
+# 换域名或换端口只需要改这个文件的 listen / server_name，
+# 外加 apps/api/.env 的 APP_ORIGIN。**前端不需要重新构建。**
+#
+# 唯一需要重新构建前端的情况是改 base path（从 / 挂到 /tools/ 之类），
+# 那时改 apps/web/.env.production 的 VITE_BASE_PATH 再 npm run build。
+
+server {
+    listen 8443 ssl;
+    listen [::]:8443 ssl;
+    http2 on;
+
+    server_name tools.example.com;
+
+    ssl_certificate     /etc/nginx/certs/tools.example.com/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/tools.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # HTTPS 不是可选项：浏览器的 Geolocation API 只在安全上下文下可用，
+    # http:// + 非 localhost 一律**静默**拒绝。天气页的自动定位会直接废掉。
+    # 顺带 Secure cookie 也需要它。
+
+    # 前端构建产物
+    root /srv/h5tools/web;
+    index index.html;
+
+    # 带 hash 的静态资源可以长缓存
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # 接口反代到只绑了 127.0.0.1 的 Node 进程
+    location /api/ {
+        proxy_pass http://127.0.0.1:3100;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        # ⚠ 这两行是登录限流的生命线。
+        # 后端设了 trust proxy，它按 X-Forwarded-For 取客户端 IP；
+        # 这里不转发的话，后端看到的永远是 127.0.0.1，
+        # 「按 IP 限流」会退化成全站共享一个额度 —— 等于没有防爆破。
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 登录接口跑 argon2，是刻意慢的，别把超时设太短
+        proxy_read_timeout 30s;
+    }
+
+    # SPA 路由：非静态文件一律回 index.html，交给 vue-router
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # index.html 不能缓存，否则发新版后用户还拿着旧的资源清单
+    location = /index.html {
+        add_header Cache-Control "no-store";
+    }
+}
