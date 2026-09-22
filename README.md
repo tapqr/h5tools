@@ -23,11 +23,17 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 npm run db:migrate -w @h5tools/api   # 建表
 npm run user:seed -w @h5tools/api    # 建初始账号 admin / 123123
-npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
+npm run dev                   # shared(watch) + api(3100) + web(5273) 一起起
 ```
+
+打开 http://localhost:5273 ，用 `admin` / `123123` 登录。
 
 前端开发服务器把 `/api` 代理到后端，和生产的同域形态一致 ——
 所以前端代码里永远只写 `/api` 相对路径，不存在写死的域名端口。
+
+**前端端口是固定的（5273）且撞了就报错**，不会静默顺延。这台机器是共享的，
+5173/5174/5175 都被别的应用占着，而 Vite 默认撞端口会悄悄换一个 ——
+调试时曾因此把请求打到别人的站点上，页面标题都不是自己的还找了半天。
 
 ## 目录
 
@@ -53,6 +59,15 @@ npm run dev                   # shared(watch) + api(3100) + web(5173) 一起起
 | `npm run user:list -w @h5tools/api` | 列出账号与改密状态 |
 | `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建账号，随机强密码只打印一次 |
 | `npm run user:passwd -w @h5tools/api -- admin` | 改密码，不回显、不进 shell history |
+
+## 当前进度
+
+| 功能 | 状态 |
+|---|---|
+| 登录（Redis session、默认拒绝、登录限流） | ✅ |
+| URL 导航（展示页 + PC 管理页 + 点击统计） | ✅ |
+| 天气对比（从 weather-app 搬迁） | ✅ |
+| 部署上线 | ⏸ 配置与文档已就绪，见 `docs/DEPLOYMENT.md` |
 
 ## 两件容易踩的事
 
