@@ -7,6 +7,8 @@ import { AppModule } from '../app.module.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { resetDb } from './db.js';
+import request from 'supertest';
+import { PasswordService } from '../auth/password.service.js';
 
 export interface TestApp {
   app: NestExpressApplication;
@@ -55,5 +57,37 @@ export async function createTestApp(): Promise<TestApp> {
     async close() {
       await app.close();
     },
+  };
+}
+
+export interface LoggedInUser {
+  id: string;
+  username: string;
+  /** 直接塞给 supertest 的 .set('Cookie', ...) */
+  cookie: string[];
+}
+
+/**
+ * 建一个用户并登录，返回可直接使用的 cookie。
+ *
+ * 越权测试需要两个互不相干的用户，所以这个 helper 要能被反复调用。
+ */
+export async function createUserAndLogin(
+  ctx: TestApp,
+  username: string,
+): Promise<LoggedInUser> {
+  const password = `password-for-${username}`;
+  const user = await ctx.prisma.user.create({
+    data: {
+      username,
+      displayName: username,
+      passwordHash: await ctx.app.get(PasswordService).hash(password),
+    },
+  });
+  const res = await request(ctx.server).post('/auth/login').send({ username, password }).expect(200);
+  return {
+    id: user.id,
+    username,
+    cookie: res.headers['set-cookie'] as unknown as string[],
   };
 }

@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
+import { NavModule } from './nav/nav.module.js';
 
 /**
  * 一个功能一个 Module。模块化单体 —— 不拆微服务,理由见
@@ -18,6 +19,7 @@ import { UserModule } from './user/user.module.js';
     RedisModule,
     AuthModule,
     UserModule,
+    NavModule,
     HealthModule,
   ],
 })
