@@ -13,3 +13,5 @@
 
 export * from './auth/index.js';
 export * from './nav/index.js';
+export * from './weather/index.js';
+export * from './geo/index.js';

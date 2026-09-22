@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "prisma generate && nest build",
-    "dev": "prisma generate && nest start --watch",
+    "build": "tsc -b ../../packages/shared && prisma generate && nest build",
+    "dev": "tsc -b ../../packages/shared && prisma generate && nest start --watch",
     "start:prod": "node dist/main",
     "lint": "oxlint src/",
     "test": "vitest run",
