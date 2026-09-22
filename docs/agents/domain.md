@@ -38,6 +38,32 @@ Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
         └── docs/adr/
 ```
 
+### 本仓库的偏离：上下文文档放在 `docs/contexts/<name>/`
+
+上面那个布局假设每个上下文对应一个 `src/<context>/` 目录。本仓库是 npm workspaces，
+一个上下文**横跨 `apps/api` 与 `apps/web` 两个包**（比如「天气」既有后端的 provider
+归一化，也有前端那套随昼夜变色的皮肤），没有单一目录可以放它的 `CONTEXT.md`。
+
+所以改成：
+
+```
+/
+├── CONTEXT-MAP.md
+├── docs/
+│   ├── adr/                           ← 跨上下文的系统级决策
+│   └── contexts/
+│       ├── weather/
+│       │   ├── CONTEXT.md
+│       │   └── adr/
+│       └── nav/
+│           ├── CONTEXT.md
+│           └── adr/
+├── apps/api/
+└── apps/web/
+```
+
+`CONTEXT-MAP.md` 里有一张表，把每个上下文映射到它散落在各包中的代码位置。
+
 ## Use the glossary's vocabulary
 
 When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
