@@ -13,7 +13,7 @@
 
 ## 零、先决条件
 
-- Node >= 22.14，npm >= 12（系统 npm 10.x 装不上这个仓库，原因见 `.npmrc`）
+- **Node >= 22.14，npm >= 12**。版本不够会被 `engine-strict` 直接拦下，原因见 `.npmrc`
 - 部署机上已有 Postgres、Redis、nginx
 - **HTTPS 证书**。这不是可选项：浏览器的 Geolocation API 只在安全上下文下可用，
   `http://` + 非 localhost 一律**静默**拒绝，天气页的自动定位会直接废掉；
@@ -66,7 +66,7 @@ VITE_BASE_PATH=/
 ## 三、构建与放置
 
 ```bash
-npx -y npm@latest install     # ⚠ 不要用系统 npm
+npm install
 npm run build                 # shared -> api -> web
 
 npm run db:deploy -w @h5tools/api    # 建表（只应用已有迁移）
@@ -121,7 +121,7 @@ sudo -u www-data ls /apt/servers/h5tools/apps/web/dist
 cd /apt/servers/h5tools
 git pull
 
-npx -y npm@latest install            # ⚠ 不要用系统 npm；lock 没变也跑一次最省心
+npm install                          # lock 没变也跑一次最省心
 npm run build                        # shared -> api -> web
 
 npm run db:deploy -w @h5tools/api    # 有新迁移才会动，没有就是 no-op

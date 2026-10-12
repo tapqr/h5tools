@@ -9,15 +9,15 @@
 ## 环境要求
 
 - **Node >= 22.14**。22.13.x 上 `nest start` 会抛 `ERR_REQUIRE_CYCLE_MODULE`，与依赖树无关。
-- **npm >= 12**。系统自带的 npm 10.x 装不上这个仓库，原因写在 `.npmrc` 里。
-  用 `npx -y npm@latest install`。
+- **npm >= 12**。更低的版本装不上这个仓库，原因写在 `.npmrc` 里。
+  `engine-strict=true` 会在版本不够时直接拦下来，不会装出一棵半残的依赖树。
 - Docker（本机开发用的 Postgres 容器）
 - 能访问内网的 Redis（地址见 `apps/api/.env`，**共享实例**，见下）
 
 ## 快速开始
 
 ```bash
-npx -y npm@latest install     # ⚠ 不要用系统 npm，见 .npmrc
+npm install
 npm run db:up                 # 起本机开发用的 Postgres（Redis 用内网共享实例）
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env

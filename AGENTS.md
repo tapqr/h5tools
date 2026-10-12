@@ -14,7 +14,7 @@
 
 | 约定 | 不遵守会怎样 |
 |---|---|
-| **装依赖用 `npx -y npm@latest install`** | 系统 npm 10.x 的 arborist 解析 vite 8 的可选 peer 环时会崩（`Cannot read properties of null reading 'edgesOut'`）。**不要改用 `--legacy-peer-deps`** —— 那会关掉全部 peer 检查 |
+| **npm >= 12**（`engines` 已声明，`engine-strict` 会拦） | 更低版本的 arborist 解析 vite 8 的可选 peer 环时会崩（`Cannot read properties of null reading 'edgesOut'`）。**不要改用 `--legacy-peer-deps`** —— 那会关掉全部 peer 检查 |
 | **不要用 bun** | 会改 `node_modules` 属主与 ACL，共享环境下 claude-svc 会失去写权限 |
 | **Node >= 22.14** | 22.13.x 上 `nest start` 抛 `ERR_REQUIRE_CYCLE_MODULE` |
 | **后端是 ESM，相对导入必须带 `.js` 扩展名** | 运行时找不到模块。哪怕源文件是 `.ts`，也写 `./foo.js` |
