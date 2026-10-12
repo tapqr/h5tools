@@ -115,7 +115,49 @@ sudo -u www-data ls /apt/servers/h5tools/apps/web/dist
 不转义的典型症状：带 `http://` 报 `P1013 invalid port number`；
 密码里有 `#` 则 `#` 之后的内容被当作 URL 片段**静默截掉**，表现为认证失败或库名不对。
 
-## 四、起进程
+## 四、更新已部署的实例
+
+```bash
+cd /apt/servers/h5tools
+git pull
+
+npx -y npm@latest install            # ⚠ 不要用系统 npm；lock 没变也跑一次最省心
+npm run build                        # shared -> api -> web
+
+npm run db:deploy -w @h5tools/api    # 有新迁移才会动，没有就是 no-op
+pm2 restart h5tools-api
+```
+
+nginx **不用动**，也不用 reload —— `root` 指向仓库里的 `apps/web/dist`，
+构建直接把文件换掉了。
+
+### 顺序不能随便调
+
+**`git pull` 之后必须 `npm run build`。** `dist/` 被 gitignore，pull 下来的只有源码。
+漏了这步的症状最阴险：接口是新的、页面是旧的，两边对不上，而且没有任何报错。
+
+**`db:deploy` 要在 `pm2 restart` 之前。** 新代码会读新列，先重启的话中间那几秒
+会打到还没建出来的列上。反过来（先迁移后重启）只要迁移是加列、加表这类
+向后兼容的改动就没问题 —— 旧代码不认识新列而已。
+
+> 生产上只用 `db:deploy`，永远不要 `db:migrate`。理由见上一节的警告框。
+
+### 前端是 hash 文件名，旧标签页会 404
+
+构建会清空 `dist/`，旧的 `*-XXXXXXXX.js` 分块被删掉。更新前就开着页面的人，
+手里的 `index.html` 还指向旧分块，切路由时会 404。刷新一下就好 ——
+这个站用的人不多，没为它上版本化保留或 service worker。
+
+### 更新后值得看一眼
+
+```bash
+pm2 logs h5tools-api --lines 30     # 起来了没，有没有卡在启动守卫上
+curl -si https://<域名>/api/auth/me # 预期 401（没带 cookie），不是 502
+```
+
+502 基本就是 api 没起来，回去看 `pm2 logs`。
+
+## 五、起进程
 
 ```bash
 # 原地部署：直接用仓库里的配置，改一下里面的 cwd 即可
@@ -133,7 +175,7 @@ pm2 set pm2-logrotate:retain 14
 这个站公网可达，挂上去几小时内就会有扫描器对着登录接口跑弱口令字典，
 而整套安全方案押在这一个密码上。
 
-## 五、nginx
+## 六、nginx
 
 抄 `deploy/nginx.conf.example`，改 `listen` / `server_name` / 证书路径 / `root`。
 
@@ -147,7 +189,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 后端设了 `trust proxy`，按 `X-Forwarded-For` 取客户端 IP。不转发的话后端看到的
 永远是 `127.0.0.1`，「按 IP 限流」会退化成全站共享一个额度 —— 等于没有防爆破。
 
-## 六、上线后必须验的六件事
+## 七、上线后必须验的六件事
 
 这六件事**只能在真实环境验证**，localhost 一件都测不出来
 （localhost 本身就是安全上下文，`Secure` cookie 照样种得上，`trust proxy` 根本不生效）。
