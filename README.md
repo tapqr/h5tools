@@ -56,8 +56,9 @@ npm run dev                   # shared(watch) + api(3100) + web(5273) 一起起
 | `npm run db:up` / `db:down` | 本机开发用的 Postgres 容器 |
 | `npm run db:migrate -w @h5tools/api` | 改完 schema 后生成并应用迁移 |
 | `npm run db:studio -w @h5tools/api` | Prisma Studio |
-| `npm run user:list -w @h5tools/api` | 列出账号与改密状态 |
-| `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建账号，随机强密码只打印一次 |
+| `npm run user:list -w @h5tools/api` | 列出账号、角色与改密状态 |
+| `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建普通账号，随机强密码只打印一次 |
+| `npm run user:create -w @h5tools/api -- --username x --role admin` | 建 admin 账号 |
 | `npm run user:passwd -w @h5tools/api -- admin` | 改密码，不回显、不进 shell history |
 
 ## 当前进度

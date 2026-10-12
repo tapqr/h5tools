@@ -9,6 +9,7 @@ import { RedisService } from '../redis/redis.service.js';
 import { resetDb } from './db.js';
 import request from 'supertest';
 import { PasswordService } from '../auth/password.service.js';
+import type { UserRole } from '@h5tools/shared';
 
 export interface CreateTestAppOptions {
   /**
@@ -16,6 +17,14 @@ export interface CreateTestAppOptions {
    * WEATHER_PROVIDERS 换成假 provider，避免真的去打第三方接口。
    */
   customize?: (builder: TestingModuleBuilder) => TestingModuleBuilder;
+  /**
+   * 额外挂进来的 controller。@Roles() 的测试用它 —— 真实应用里暂时
+   * 没有 admin 专属接口，但那个装饰器必须在接到第一个真实用途**之前**
+   * 就被测到，否则等到用上时才发现它不生效，就已经晚了。
+   *
+   * APP_GUARD 是全局的，这里挂的路由同样走 AuthGuard。
+   */
+  controllers?: NonNullable<Parameters<typeof Test.createTestingModule>[0]['controllers']>;
 }
 
 export interface TestApp {
@@ -38,7 +47,10 @@ export interface TestApp {
  * 「接口能访问」是假的。
  */
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
-  const base = Test.createTestingModule({ imports: [AppModule] });
+  const base = Test.createTestingModule({
+    imports: [AppModule],
+    controllers: options.controllers ?? [],
+  });
   const moduleRef = await (options.customize ? options.customize(base) : base).compile();
   const app = moduleRef.createNestApplication<NestExpressApplication>();
 
@@ -84,12 +96,14 @@ export interface LoggedInUser {
 export async function createUserAndLogin(
   ctx: TestApp,
   username: string,
+  role: UserRole = 'user',
 ): Promise<LoggedInUser> {
   const password = `password-for-${username}`;
   const user = await ctx.prisma.user.create({
     data: {
       username,
       displayName: username,
+      role,
       passwordHash: await ctx.app.get(PasswordService).hash(password),
     },
   });

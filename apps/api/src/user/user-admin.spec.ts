@@ -26,7 +26,7 @@ describe('账号管理', () => {
   describe('create', () => {
     it('生成的随机密码足够长，且能用它登录', async () => {
       const { password } = await users.create('zhangsan', '张三');
-      expect(password.length).toBeGreaterThanOrEqual(MIN_PASSWORD_LENGTH);
+      expect(password.length).toBeGreaterThanOrEqual(MIN_PASSWORD_LENGTH.admin);
 
       await request(ctx.server)
         .post('/auth/login')
@@ -49,6 +49,18 @@ describe('账号管理', () => {
       await users.create('zhangsan');
       const [u] = await users.list();
       expect(u?.passwordChanged).toBe(true);
+    });
+
+    it('默认建的是普通账号', async () => {
+      await users.create('zhangsan');
+      const [u] = await users.list();
+      expect(u?.role).toBe('user');
+    });
+
+    it('可以显式建 admin', async () => {
+      await users.create('laowang', '老王', 'admin');
+      const [u] = await users.list();
+      expect(u?.role).toBe('admin');
     });
   });
 
@@ -85,6 +97,31 @@ describe('账号管理', () => {
       await expect(users.changePassword('zhangsan', 'short')).rejects.toThrow(UserAdminError);
     });
 
+    /**
+     * 分级的全部意义就在这两条上：同一个密码，普通账号能用，admin 不能。
+     * 下限查的是**被改的那个账号的角色**，不是调用方的 —— 查错了的症状是
+     * admin 也被按 8 位放行，而那是完全静默的。
+     */
+    it('普通账号 8 位就够', async () => {
+      await users.create('zhangsan');
+      await expect(users.changePassword('zhangsan', '12345678')).resolves.toBeDefined();
+
+      await request(ctx.server)
+        .post('/auth/login')
+        .send({ username: 'zhangsan', password: '12345678' })
+        .expect(200);
+    });
+
+    it('admin 同样的 8 位密码会被拒', async () => {
+      await users.create('laowang', '老王', 'admin');
+      await expect(users.changePassword('laowang', '12345678')).rejects.toThrow(/12 位/);
+    });
+
+    it('7 位连普通账号都不行', async () => {
+      await users.create('zhangsan');
+      await expect(users.changePassword('zhangsan', '1234567')).rejects.toThrow(/8 位/);
+    });
+
     it('账号不存在会报错', async () => {
       await expect(users.changePassword('nobody', 'a-properly-long-password')).rejects.toThrow(
         UserAdminError,
@@ -93,6 +130,12 @@ describe('账号管理', () => {
   });
 
   describe('seedAdmin', () => {
+    it('seed 出来的 admin 角色是 admin', async () => {
+      await users.seedAdmin();
+      const [u] = await users.list();
+      expect(u?.role).toBe('admin');
+    });
+
     it('幂等：已存在则不重复创建', async () => {
       expect(await users.seedAdmin()).toBe(true);
       expect(await users.seedAdmin()).toBe(false);
