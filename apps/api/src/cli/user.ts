@@ -4,6 +4,7 @@ import { AppModule } from '../app.module.js';
 import { UserAdminError, UserAdminService } from '../user/user-admin.service.js';
 import { INITIAL_ADMIN_PASSWORD } from '../auth/startup-password-check.js';
 import { promptHidden } from './prompt.js';
+import type { UserRole } from '@h5tools/shared';
 
 /**
  * 账号管理。**不做注册页** —— 账号靠这个脚本建。
@@ -12,6 +13,7 @@ import { promptHidden } from './prompt.js';
  * 以后要给同事开号，再跑一次 create 即可，不用动数据库结构。
  *
  *   npm run user:create -- --username zhangsan --name 张三
+ *   npm run user:create -- --username laowang --role admin
  *   npm run user:passwd -- admin
  *   npm run user:list
  *   npm run user:seed
@@ -31,10 +33,15 @@ async function main(): Promise<void> {
     switch (command) {
       case 'create': {
         const username = args.flags.username ?? args.positional[0];
-        if (!username) throw new UsageError('用法: user:create -- --username <账号> [--name <显示名>]');
+        if (!username) {
+          throw new UsageError(
+            '用法: user:create -- --username <账号> [--name <显示名>] [--role admin|user]',
+          );
+        }
+        const role = parseRole(args.flags.role);
 
-        const { password } = await users.create(username, args.flags.name);
-        console.log(`\n已创建账号 ${username}（${args.flags.name ?? username}）`);
+        const { password } = await users.create(username, args.flags.name, role);
+        console.log(`\n已创建账号 ${username}（${args.flags.name ?? username}），角色 ${role}`);
         console.log(`密码：${password}`);
         console.log('\n这个密码只显示这一次，请立刻存进密码管理器。\n');
         break;
@@ -63,7 +70,9 @@ async function main(): Promise<void> {
         }
         for (const u of all) {
           const changed = u.passwordChanged ? '已改密' : '⚠ 仍是初始密码';
-          console.log(`${u.username.padEnd(16)} ${u.displayName.padEnd(16)} ${changed}`);
+          console.log(
+            `${u.username.padEnd(16)} ${u.displayName.padEnd(16)} ${u.role.padEnd(6)} ${changed}`,
+          );
         }
         break;
       }
@@ -89,6 +98,12 @@ async function main(): Promise<void> {
 }
 
 class UsageError extends Error {}
+
+function parseRole(raw: string | undefined): UserRole {
+  if (raw === undefined) return 'user';
+  if (raw === 'admin' || raw === 'user') return raw;
+  throw new UsageError(`--role 只能是 admin 或 user，收到：${raw}`);
+}
 
 interface Args {
   /** 位置参数 */

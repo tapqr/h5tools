@@ -56,6 +56,7 @@ describe('认证 (契约)', () => {
         id: expect.any(String),
         username: USERNAME,
         displayName: '爱丽丝',
+        role: 'user',
       });
 
       const cookie = res.headers['set-cookie'][0] as string;

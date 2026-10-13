@@ -29,12 +29,14 @@ export class AuthService {
     const ok = await this.passwords.verify(user.passwordHash, password);
     if (!ok) return null;
 
-    return { id: user.id, username: user.username, displayName: user.displayName };
+    return { id: user.id, username: user.username, displayName: user.displayName, role: user.role };
   }
 
   async findById(id: string): Promise<CurrentUser | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    return user ? { id: user.id, username: user.username, displayName: user.displayName } : null;
+    return user
+      ? { id: user.id, username: user.username, displayName: user.displayName, role: user.role }
+      : null;
   }
 
   createSession(userId: string): Promise<string> {

@@ -45,7 +45,7 @@ describe('initialOf', () => {
   });
 
   it('纯 IP 取第一位数字', () => {
-    expect(initialOf('http://10.0.13.142:6379')).toBe('1');
+    expect(initialOf('http://192.0.2.10:6379')).toBe('1');
   });
 });
 

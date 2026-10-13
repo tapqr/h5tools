@@ -9,15 +9,15 @@
 ## 环境要求
 
 - **Node >= 22.14**。22.13.x 上 `nest start` 会抛 `ERR_REQUIRE_CYCLE_MODULE`，与依赖树无关。
-- **npm >= 12**。系统自带的 npm 10.x 装不上这个仓库，原因写在 `.npmrc` 里。
-  用 `npx -y npm@latest install`。
+- **npm >= 12**。更低的版本装不上这个仓库，原因写在 `.npmrc` 里。
+  `engine-strict=true` 会在版本不够时直接拦下来，不会装出一棵半残的依赖树。
 - Docker（本机开发用的 Postgres 容器）
-- 能访问内网的 Redis（`10.0.13.142:6379`，**共享实例**，见下）
+- 能访问内网的 Redis（地址见 `apps/api/.env`，**共享实例**，见下）
 
 ## 快速开始
 
 ```bash
-npx -y npm@latest install     # ⚠ 不要用系统 npm，见 .npmrc
+npm install
 npm run db:up                 # 起本机开发用的 Postgres（Redis 用内网共享实例）
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
@@ -56,8 +56,9 @@ npm run dev                   # shared(watch) + api(3100) + web(5273) 一起起
 | `npm run db:up` / `db:down` | 本机开发用的 Postgres 容器 |
 | `npm run db:migrate -w @h5tools/api` | 改完 schema 后生成并应用迁移 |
 | `npm run db:studio -w @h5tools/api` | Prisma Studio |
-| `npm run user:list -w @h5tools/api` | 列出账号与改密状态 |
-| `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建账号，随机强密码只打印一次 |
+| `npm run user:list -w @h5tools/api` | 列出账号、角色与改密状态 |
+| `npm run user:create -w @h5tools/api -- --username x --name 名字` | 建普通账号，随机强密码只打印一次 |
+| `npm run user:create -w @h5tools/api -- --username x --role admin` | 建 admin 账号 |
 | `npm run user:passwd -w @h5tools/api -- admin` | 改密码，不回显、不进 shell history |
 
 ## 当前进度
