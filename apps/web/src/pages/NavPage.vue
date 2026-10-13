@@ -113,7 +113,16 @@ async function onReset() {
 <style scoped>
 .nav {
   padding: 16px 20px 32px;
-  max-width: 1280px;
+  /*
+   * 1280 是按 1080p 定的，在 2K/4K 上只占三分之一到一半，右边全空着。
+   *
+   * 封顶放到 2240：2560 宽的屏能铺满（两侧留出 gutter），再宽就在这停住 ——
+   * 一行扫过整个 4K 屏不是「一屏看全」，是「一屏找不到」。
+   *
+   * 另外 4K 显示器多数跑 150%~200% 缩放，CSS 像素其实落在 1920~2560 这段，
+   * 真正要覆盖的是它，不是 3840。
+   */
+  max-width: 2240px;
   margin: 0 auto;
 }
 
@@ -188,10 +197,14 @@ async function onReset() {
 /*
  * 列数自适应，不写断点。
  * PC 宽屏铺满多列，手机自然落成一到两列 —— 这正是"一屏看全"想要的效果。
+ *
+ * 下限跟着视口长大（180 -> 240）：宽屏上卡片变大，而不是单纯多塞几列。
+ * 卡片第二行是 URL，宽一点能多看见一截；纯加列数只会让眼睛横扫得更远。
+ * clamp 的下限 180 保证窄屏行为跟以前**完全一致** —— 1280 以下 13vw 都不到 180。
  */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(clamp(180px, 13vw, 240px), 1fr));
   gap: 10px;
 }
 
